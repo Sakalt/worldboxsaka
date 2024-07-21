@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleSeason = document.getElementById('toggleSeason');
     const saveGame = document.getElementById('saveGame');
     const loadGame = document.getElementById('loadGame');
+    const blockTypeSelect = document.getElementById('blockType');
+    const placeBlockButton = document.getElementById('placeBlock');
+    const destroyBlockButton = document.getElementById('destroyBlock');
     const seasonElement = document.getElementById('season');
     const yearElement = document.getElementById('year');
     const worldMap = document.getElementById('worldMap');
@@ -29,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const images = {};
-    const imageNames = ["grass", "sand", "volcano", "hotspring", "acidvolcano", "person", "zombie", "house", "flag"];
+    const imageNames = ["grass", "sand", "volcano", "hotspring", "acidvolcano", "person", "zombie", "house", "flag1", "flag2", "flag3", "flag4", "flag5", "flag6", "flag7", "flag8", "flag9", "flag10"];
 
     function loadImages(callback) {
         let loadedImages = 0;
@@ -69,9 +72,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: generateCountryName(),
                 population: Math.floor(Math.random() * 100 + 50),
                 culture: generateCulture(),
-                territory: [] // 国の領土のデータ
+                territory: generateRandomTerritory(), // 国の領土のデータ
+                flag: `flag${i + 1}` // それぞれの国に対応する旗の画像
             });
         }
+    }
+
+    function generateRandomTerritory() {
+        const territory = [];
+        const centerX = Math.floor(Math.random() * 50) * 16;
+        const centerY = Math.floor(Math.random() * 50) * 16;
+        const size = Math.floor(Math.random() * 10) + 5; // ランダムなサイズ
+
+        for (let i = 0; i < size; i++) {
+            const x = centerX + (Math.floor(Math.random() * 3) - 1) * 16;
+            const y = centerY + (Math.floor(Math.random() * 3) - 1) * 16;
+            territory.push({ x, y });
+        }
+
+        return territory;
     }
 
     function initializePeople() {
@@ -188,6 +207,21 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.drawImage(images.zombie, enemy.x, enemy.y, 16, 16);
         });
 
+        // 国の領土と旗の描画
+        worldData.countries.forEach(country => {
+            country.territory.forEach(tile => {
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = "#FFFFFF"; // 透明な領土
+                ctx.fillRect(tile.x, tile.y, 16, 16);
+                ctx.globalAlpha = 1.0;
+            });
+
+            // 旗を領土の中心に描画
+            const centerX = country.territory.reduce((acc, tile) => acc + tile.x, 0) / country.territory.length;
+            const centerY = country.territory.reduce((acc, tile) => acc + tile.y, 0) / country.territory.length;
+            ctx.drawImage(images[country.flag], centerX, centerY, 16, 16);
+        });
+
         // 他の描画ロジック
     }
 
@@ -232,6 +266,33 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(update);
     }
 
+    function getMousePosition(canvas, event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+        };
+    }
+
+    function placeBlock(event) {
+        const pos = getMousePosition(worldMap, event);
+        const blockType = blockTypeSelect.value;
+        worldData.resources.push({
+            type: blockType,
+            x: Math.floor(pos.x / 16) * 16,
+            y: Math.floor(pos.y / 16) * 16
+        });
+        renderWorld();
+    }
+
+    function destroyBlock(event) {
+        const pos = getMousePosition(worldMap, event);
+        const x = Math.floor(pos.x / 16) * 16;
+        const y = Math.floor(pos.y / 16) * 16;
+        worldData.resources = worldData.resources.filter(resource => resource.x !== x || resource.y !== y);
+        renderWorld();
+    }
+
     speedRange.addEventListener('input', () => {
         speed = parseFloat(speedRange.value);
         speedValue.textContent = `速度: 1日/${(dayDuration / speed).toFixed(1)}秒`;
@@ -240,6 +301,12 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleSeason.addEventListener('click', changeSeason);
     saveGame.addEventListener('click', saveGameData);
     loadGame.addEventListener('click', loadGameData);
+    placeBlockButton.addEventListener('click', () => {
+        worldMap.addEventListener('click', placeBlock);
+    });
+    destroyBlockButton.addEventListener('click', () => {
+        worldMap.addEventListener('click', destroyBlock);
+    });
 
     loadImages(() => {
         initializeWorld();
