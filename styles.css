@@ -1,0 +1,35 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    text-align: center;
+}
+
+.controls {
+    margin-bottom: 10px;
+}
+
+#worldMapContainer {
+    position: relative;
+    width: 800px;
+    height: 800px;
+    border: 1px solid #000;
+}
+
+#worldMap {
+    width: 100%;
+    height: 100%;
+    background-color: #87CEEB; /* 海の青 */
+}
+
+#info {
+    margin-top: 10px;
+}
