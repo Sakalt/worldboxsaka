@@ -28,6 +28,26 @@ document.addEventListener('DOMContentLoaded', () => {
         enemies: []
     };
 
+    const images = {};
+    const imageNames = ["grass", "sand", "volcano", "hotspring", "acidvolcano", "person", "zombie", "house", "flag"];
+
+    function loadImages(callback) {
+        let loadedImages = 0;
+        const totalImages = imageNames.length;
+
+        imageNames.forEach(name => {
+            const img = new Image();
+            img.src = `assets/textures/${name}.png`;
+            img.onload = () => {
+                loadedImages++;
+                images[name] = img;
+                if (loadedImages === totalImages) {
+                    callback();
+                }
+            };
+        });
+    }
+
     function generateCountryName() {
         const prefix = kanji[Math.floor(Math.random() * kanji.length)];
         const suffix = kanji[Math.floor(Math.random() * kanji.length)];
@@ -155,34 +175,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 草や砂、火山、温泉、酸火山の描画
         worldData.resources.forEach(resource => {
-            ctx.fillStyle = getResourceColor(resource.type);
-            ctx.fillRect(resource.x, resource.y, 10, 10);
+            ctx.drawImage(images[resource.type], resource.x, resource.y, 16, 16);
         });
 
         // 人の描画
         worldData.people.forEach(person => {
-            ctx.fillStyle = "#000000"; // 黒
-            ctx.fillRect(person.x, person.y, 5, 5);
+            ctx.drawImage(images.person, person.x, person.y, 16, 16);
         });
 
         // 敵の描画
         worldData.enemies.forEach(enemy => {
-            ctx.fillStyle = "#FF0000"; // 赤
-            ctx.fillRect(enemy.x, enemy.y, 5, 5);
+            ctx.drawImage(images.zombie, enemy.x, enemy.y, 16, 16);
         });
 
         // 他の描画ロジック
-    }
-
-    function getResourceColor(type) {
-        switch (type) {
-            case "grass": return "#00FF00";
-            case "sand": return "#FFFF00";
-            case "volcano": return "#FF4500";
-            case "hotspring": return "#00CED1";
-            case "acidvolcano": return "#8A2BE2";
-            default: return "#FFFFFF";
-        }
     }
 
     function changeSeason() {
@@ -235,6 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
     saveGame.addEventListener('click', saveGameData);
     loadGame.addEventListener('click', loadGameData);
 
-    initializeWorld();
-    update();
+    loadImages(() => {
+        initializeWorld();
+        update();
+    });
 });
