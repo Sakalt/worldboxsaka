@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>weltboxゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <label for="speedRange">速度:</label>
+            <input type="range" id="speedRange" min="0.5" max="2" step="0.1" value="1">
+            <div id="speedValue">1日/0.8秒</div>
+            <button id="toggleSeason">季節変更</button>
+            <button id="saveGame">ゲーム保存</button>
+            <button id="loadGame">ゲーム読み込み</button>
+        </div>
+        <div id="worldMapContainer">
+            <canvas id="worldMap"></canvas>
+        </div>
+        <div id="info">
+            <div id="season">季節: 春</div>
+            <div id="year">年: 1</div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
