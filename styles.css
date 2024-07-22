@@ -17,6 +17,10 @@ body {
     margin-bottom: 10px;
 }
 
+#blockControls {
+    margin-top: 10px;
+}
+
 #worldMapContainer {
     position: relative;
     width: 800px;
