@@ -15,8 +15,18 @@
             <button id="toggleSeason">季節変更</button>
             <button id="saveGame">ゲーム保存</button>
             <button id="loadGame">ゲーム読み込み</button>
-            <button id="toggleBuildMode">ブロック設置モード</button>
-            <button id="toggleDestroyMode">ブロック破壊モード</button>
+            <div id="blockControls">
+                <label for="blockType">ブロックタイプ:</label>
+                <select id="blockType">
+                    <option value="grass">草</option>
+                    <option value="sand">砂</option>
+                    <option value="volcano">火山</option>
+                    <option value="hotspring">温泉</option>
+                    <option value="acidvolcano">酸火山</option>
+                </select>
+                <button id="placeBlock">設置</button>
+                <button id="destroyBlock">破壊</button>
+            </div>
         </div>
         <div id="worldMapContainer">
             <canvas id="worldMap"></canvas>
