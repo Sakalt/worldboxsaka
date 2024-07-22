@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let speed = parseFloat(speedRange.value);
     let time = 0;
     const dayDuration = 0.8; // 1日は0.8秒
+    let isPlacingBlock = false;
+    let isDestroyingBlock = false;
 
     worldMap.width = 800;
     worldMap.height = 800;
@@ -275,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function placeBlock(event) {
+        if (!isPlacingBlock) return;
         const pos = getMousePosition(worldMap, event);
         const blockType = blockTypeSelect.value;
         worldData.resources.push({
@@ -286,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function destroyBlock(event) {
+        if (!isDestroyingBlock) return;
         const pos = getMousePosition(worldMap, event);
         const x = Math.floor(pos.x / 16) * 16;
         const y = Math.floor(pos.y / 16) * 16;
@@ -302,10 +306,19 @@ document.addEventListener('DOMContentLoaded', () => {
     saveGame.addEventListener('click', saveGameData);
     loadGame.addEventListener('click', loadGameData);
     placeBlockButton.addEventListener('click', () => {
+        isPlacingBlock = true;
+        isDestroyingBlock = false;
         worldMap.addEventListener('click', placeBlock);
     });
     destroyBlockButton.addEventListener('click', () => {
+        isPlacingBlock = false;
+        isDestroyingBlock = true;
         worldMap.addEventListener('click', destroyBlock);
+    });
+
+    worldMap.addEventListener('click', (event) => {
+        if (isPlacingBlock) placeBlock(event);
+        if (isDestroyingBlock) destroyBlock(event);
     });
 
     loadImages(() => {
