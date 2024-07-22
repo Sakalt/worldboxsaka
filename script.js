@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const blockTypeSelect = document.getElementById('blockType');
     const placeBlockButton = document.getElementById('placeBlock');
     const destroyBlockButton = document.getElementById('destroyBlock');
+    const characterTypeSelect = document.getElementById('characterType');
+    const placeCharacterButton = document.getElementById('placeCharacter');
     const seasonElement = document.getElementById('season');
     const yearElement = document.getElementById('year');
     const worldMap = document.getElementById('worldMap');
@@ -21,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dayDuration = 0.8; // 1日は0.8秒
     let isPlacingBlock = false;
     let isDestroyingBlock = false;
+    let isPlacingCharacter = false;
 
     worldMap.width = 800;
     worldMap.height = 800;
@@ -68,18 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return culture;
     }
 
-    function initializeCountries() {
-        for (let i = 0; i < 10; i++) {
-            worldData.countries.push({
-                name: generateCountryName(),
-                population: Math.floor(Math.random() * 100 + 50),
-                culture: generateCulture(),
-                territory: generateRandomTerritory(), // 国の領土のデータ
-                flag: `flag${i + 1}` // それぞれの国に対応する旗の画像
-            });
-        }
-    }
-
     function generateRandomTerritory() {
         const territory = [];
         const centerX = Math.floor(Math.random() * 50) * 16;
@@ -93,6 +84,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return territory;
+    }
+
+    function initializeCountries() {
+        for (let i = 0; i < 10; i++) {
+            worldData.countries.push({
+                name: generateCountryName(),
+                population: Math.floor(Math.random() * 100 + 50),
+                culture: generateCulture(),
+                territory: generateRandomTerritory(), // 国の領土のデータ
+                flag: `flag${i + 1}` // それぞれの国に対応する旗の画像
+            });
+        }
     }
 
     function initializePeople() {
@@ -148,6 +151,30 @@ document.addEventListener('DOMContentLoaded', () => {
             person.x = Math.max(0, Math.min(worldMap.width, person.x));
             person.y = Math.max(0, Math.min(worldMap.height, person.y));
 
+            // 家を建てるロジック
+            if (Math.random() < 0.01 && person.inventory.includes("wood")) {
+                worldData.structures.push({
+                    type: "house",
+                    x: person.x,
+                    y: person.y
+                });
+                person.inventory.splice(person.inventory.indexOf("wood"), 1);
+            }
+
+            // 国を建てるロジック
+            if (Math.random() < 0.01 && person.inventory.includes("gold")) {
+                const newCountry = {
+                    name: generateCountryName(),
+                    population: 1,
+                    culture: generateCulture(),
+                    territory: [{ x: person.x, y: person.y }],
+                    flag: `flag${worldData.countries.length + 1}`
+                };
+                worldData.countries.push(newCountry);
+                person.country = newCountry.name;
+                person.inventory.splice(person.inventory.indexOf("gold"), 1);
+            }
+
             // 敵との戦闘や逃走ロジック
             worldData.enemies.forEach(enemy => {
                 const dx = enemy.x - person.x;
@@ -177,6 +204,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+
+            // 領土の拡大
+            const country = worldData.countries.find(c => c.name === person.country);
+            if (country) {
+                country.territory.push({ x: person.x, y: person.y });
+            }
+        });
+
+        // 戦争による領土の削減
+        worldData.countries.forEach(country => {
+            if (Math.random() < 0.01) {
+                const enemyCountry = worldData.countries[Math.floor(Math.random() * worldData.countries.length)];
+                if (enemyCountry.name !== country.name) {
+                    const territoryToRemove = country.territory.pop();
+                    if (territoryToRemove) {
+                        enemyCountry.territory.push(territoryToRemove);
+                    }
+                }
+            }
         });
     }
 
@@ -209,14 +255,19 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.drawImage(images.zombie, enemy.x, enemy.y, 16, 16);
         });
 
+        // 構造物の描画
+        worldData.structures.forEach(structure => {
+            ctx.drawImage(images[structure.type], structure.x, structure.y, 16, 16);
+        });
+
         // 国の領土と旗の描画
         worldData.countries.forEach(country => {
+            ctx.globalAlpha = 0.5; // 透明度50%
             country.territory.forEach(tile => {
-                ctx.globalAlpha = 0.3;
                 ctx.fillStyle = "#FFFFFF"; // 透明な領土
                 ctx.fillRect(tile.x, tile.y, 16, 16);
-                ctx.globalAlpha = 1.0;
             });
+            ctx.globalAlpha = 1.0;
 
             // 旗を領土の中心に描画
             const centerX = country.territory.reduce((acc, tile) => acc + tile.x, 0) / country.territory.length;
@@ -297,6 +348,29 @@ document.addEventListener('DOMContentLoaded', () => {
         renderWorld();
     }
 
+    function placeCharacter(event) {
+        if (!isPlacingCharacter) return;
+        const pos = getMousePosition(worldMap, event);
+        const characterType = characterTypeSelect.value;
+        if (characterType === "person") {
+            worldData.people.push({
+                x: Math.floor(pos.x / 16) * 16,
+                y: Math.floor(pos.y / 16) * 16,
+                hp: 100,
+                inventory: [],
+                country: worldData.countries[Math.floor(Math.random() * worldData.countries.length)].name
+            });
+        } else if (characterType === "zombie") {
+            worldData.enemies.push({
+                x: Math.floor(pos.x / 16) * 16,
+                y: Math.floor(pos.y / 16) * 16,
+                hp: 50,
+                type: "zombie"
+            });
+        }
+        renderWorld();
+    }
+
     speedRange.addEventListener('input', () => {
         speed = parseFloat(speedRange.value);
         speedValue.textContent = `速度: 1日/${(dayDuration / speed).toFixed(1)}秒`;
@@ -308,17 +382,20 @@ document.addEventListener('DOMContentLoaded', () => {
     placeBlockButton.addEventListener('click', () => {
         isPlacingBlock = true;
         isDestroyingBlock = false;
+        isPlacingCharacter = false;
         worldMap.addEventListener('click', placeBlock);
     });
     destroyBlockButton.addEventListener('click', () => {
         isPlacingBlock = false;
         isDestroyingBlock = true;
+        isPlacingCharacter = false;
         worldMap.addEventListener('click', destroyBlock);
     });
-
-    worldMap.addEventListener('click', (event) => {
-        if (isPlacingBlock) placeBlock(event);
-        if (isDestroyingBlock) destroyBlock(event);
+    placeCharacterButton.addEventListener('click', () => {
+        isPlacingBlock = false;
+        isDestroyingBlock = false;
+        isPlacingCharacter = true;
+        worldMap.addEventListener('click', placeCharacter);
     });
 
     loadImages(() => {
